@@ -443,9 +443,10 @@ void create_event_queue(std::vector<event_occurence> &ad, std::vector<double>& o
 		if (ob_end == ob_it || (ad_it != ad_end && (*ad_it).t <= (*ob_it))) {//determine which event is first
 			event_queue.push_back(*ad_it);
 			//++ad_it;
-			ad.erase(ad.begin());
+			ad_it = ad.erase(ad_it);
 			ad.shrink_to_fit();
 			ad_it = ad.begin();
+			ad_end = ad.end();
 		}
 		else if (ad_end == ad_it || (ob_end != ob_it && (*ad_it).t>(*ob_it)))//need to create a new event for observations
 		{
@@ -454,9 +455,10 @@ void create_event_queue(std::vector<event_occurence> &ad, std::vector<double>& o
 			o_index++;
 			event_queue.push_back(eo);
 			//++ob_it;
-			observations.erase(observations.begin());
+			ob_it = observations.erase(ob_it);
 			observations.shrink_to_fit();
 			ob_it = observations.begin();
+			ob_end = observations.end();
 		}
 	}
 
@@ -694,12 +696,12 @@ int main()
 	double start = 0.35; double end = 0.95; double step = 0.05;
 
 	//q3
-	fname = "M_M_1_inf.csv";
+	/*fname = "M_M_1_inf.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_poisson, &generate_exponential);
-	/*start = 0.35;
+	*/start = 0.35;
 	fname = "D_M_1_inf.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_deterministic_arrival, &generate_exponential);
-	L2 = 21000;
+	/*L2 = 21000;
 	p = 0.2;
 	fname = "M_G_1_inf_rho_small.csv";
 	sim_multi_param(fname, start, end, step, L1, L2, C, K, p, 1, &generate_poisson, &generate_bipolar);
