@@ -123,7 +123,7 @@ int generate_deterministic_arrival(double & T, std::vector<double> &times, doubl
 
 }
 
-void generate_exponential(int num, std::vector<double> &lengths, double &C, double& L, double &mu, double &unused2) {
+void generate_exponential(int num, std::vector<double> &lengths, double &C, double& L, double &unused, double &unused2) {
 	/*
 	generates num values according to an exponential distribution with parameter mu
 	stores these values in lengths.
@@ -133,7 +133,7 @@ void generate_exponential(int num, std::vector<double> &lengths, double &C, doub
 	std::mt19937 gen(rand());
 	std::uniform_real_distribution<>dis(0, 1.0);
 	for (int counter = 0; counter<num; counter++) {
-		lengths.push_back(log(1 - dis(gen))*-1*C/(L*mu));
+		lengths.push_back(log(1 - dis(gen))*-1*C/(L));
 	}
 }
 
@@ -156,7 +156,7 @@ void generate_bipolar(int num, std::vector<double> &lengths, double &C, double &
 	}
 }
 
-void generate_deterministic_service(int num, std::vector<double> &lengths, double &C, double &L, double &mu, double &unused2) {
+void generate_deterministic_service(int num, std::vector<double> &lengths, double &C, double &L, double &unused, double &unused2) {
 	/*
 	generates num values according to a deterministic distribution with parameter mu
 	stores these values in lengths.
@@ -186,29 +186,17 @@ double arrival_departures_1_server_infinite_queue(std::vector<double> &arrivals,
 	double next_departure = 0; //next departure time, 0 =>no packet is being serviced
 	double last_departure = 0; //most recent departure time
 
-
-
-
-
 	for (double arrival : arrivals) {//iterate through the arrivals
 		while (next_departure != 0 && next_departure <= arrival) {//we have a packet being served and it should
 																  //finish before the next arrival occurs
 			d_index++;//start counting events at 1, so increment first
-
 					  //create a new departure event
 			event_occurence eo = create_event(d, d_index, 0, next_departure);
-
 			ad.push_back(eo);
-
 			last_departure = next_departure;//we need this time to determine when we start processing
 											//the next packet
-
-
-
 			next_departure = 0;
-
-
-
+			
 			if (d_index < a_index) {//we have packets in the queue
 				next_departure = last_departure + (1/departures[d_index]);//get next departure time
 			}
@@ -216,16 +204,12 @@ double arrival_departures_1_server_infinite_queue(std::vector<double> &arrivals,
 
 		a_index++;//everything that has departed before this packet has arrived has been recorded
 		event_occurence eo = create_event(a, a_index, 0, arrival);
-
 		ad.push_back(eo);//store arrival
-
 		if (next_departure == 0) {//if the system was empty before this arrival, this is the next
 								  //parcket to be serviced
 			next_departure = arrival + (1/departures[d_index]);//d_index is a_index-1, but a_index is 
-																 //1_indexed while vectors are 0_indexed
+															   //1_indexed while vectors are 0_indexed
 		}
-
-
 	}
 	//finish all remaining packets departing
 	while (d_index <a_index) {
@@ -235,11 +219,7 @@ double arrival_departures_1_server_infinite_queue(std::vector<double> &arrivals,
 		ad.push_back(eo);
 
 		last_departure = next_departure;
-
-
-
 		next_departure = 0;
-
 		if (d_index < a_index)//we have packets in the queue
 			next_departure = last_departure + (1/departures[d_index]);//get next departure time
 	}
@@ -275,7 +255,7 @@ void add_departure_event_finite_queue(int &d_index, int &skip_next, double &next
 				next_to_skip = -1;
 			}
 		}
-		else {//if (dropped.empty() || (d_index+1) != dropped[next_to_skip]){//we have packets in the queue
+		else {///we have packets in the queue
 			next_departure = last_departure + (1/departures[d_index] );//get next departure time
 			skip_next = 0;
 		}
@@ -442,7 +422,6 @@ void create_event_queue(std::vector<event_occurence> &ad, std::vector<double>& o
 	while (ad_it != ad_end || ob_it != ob_end) {
 		if (ob_end == ob_it || (ad_it != ad_end && (*ad_it).t <= (*ob_it))) {//determine which event is first
 			event_queue.push_back(*ad_it);
-			//++ad_it;
 			ad_it = ad.erase(ad_it);
 			ad.shrink_to_fit();
 			ad_it = ad.begin();
@@ -454,7 +433,6 @@ void create_event_queue(std::vector<event_occurence> &ad, std::vector<double>& o
 
 			o_index++;
 			event_queue.push_back(eo);
-			//++ob_it;
 			ob_it = observations.erase(ob_it);
 			observations.shrink_to_fit();
 			ob_it = observations.begin();
@@ -519,7 +497,6 @@ void observe(unsigned long long int num_arrivals, unsigned long long int num_dep
 		curr_buffer -= 2;
 	num_buffer += curr_buffer;
 	assert(num_buffer <= ULLONG_MAX);
-	//std::cout<<num_buffer<<","<<curr_buffer<<std::endl;
 }
 
 //end of event processing
@@ -549,7 +526,6 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 	//create queues
 	if (num_servers == 1) {
 		Ploss = arrival_departures_1_server(arrivals, departures, C, K, ad);
-		//std::cout << Ploss << std::endl;
 	}
 	else {
 		Ploss = arrival_departures_2_server_infinite_buffer(arrivals, departures, C, ad);
@@ -582,16 +558,8 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 	unsigned long long int num_in_queue_per_arrival = 0;
 	unsigned long long int num_buffer_per_observation = 0;
 
-	//std::ofstream results;
-	//results.open("queue.csv");
-	//results << "time,type,id, skip" << std::endl;
-	//std::ofstream r2;
-	//r2.open("queue2.csv");
-
-
 	//iterate through the event queue and perform correct action
 	for (event_occurence e : event_queue) {
-		//results << e.t << "," << e.e.t << "," << e.e.d_num << "," << e.e.skip << std::endl;
 		switch (e.e.t) {
 		case a: arrive(num_arrivals1, e, num_departures, num_servers, num_in_queue_per_arrival, num_arrival_events);
 			break;
@@ -604,10 +572,8 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 			assert(false);
 			break;
 		}
-		//r2 << num_departures << "," << num_arrivals1 << "," << num_observations << "," << e.e.t << std::endl;
 	}
-	//results.close();
-	//r2.close();
+
 	PIdle = (long double)num_empty / (long double) num_observations;
 	N_a = (long double)num_in_queue_per_arrival / (long double)num_arrival_events;
 	N_o = (long double)num_buffer_per_observation / (long double)num_observations;
