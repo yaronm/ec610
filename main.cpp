@@ -325,7 +325,7 @@ double arrival_departures_1_server(std::vector<double> &arrivals, std::vector<do
 		else {
 			if (next_departure == 0) {//if the system was empty before this arrival, this is the next
 									  //parcket to be serviced
-				next_departure = arrival + (departures[d_index] / C);//d_index is a_index-1, but a_index is 
+				next_departure = arrival + (departures[d_index]);//d_index is a_index-1, but a_index is 
 																	 //1_indexed while vectors are 0_indexed
 			}
 		}
@@ -442,7 +442,10 @@ void create_event_queue(std::vector<event_occurence> &ad, std::vector<double>& o
 	while (ad_it != ad_end || ob_it != ob_end) {
 		if (ob_end == ob_it || (ad_it != ad_end && (*ad_it).t <= (*ob_it))) {//determine which event is first
 			event_queue.push_back(*ad_it);
-			++ad_it;
+			//++ad_it;
+			ad.erase(ad.begin());
+			ad.shrink_to_fit();
+			ad_it = ad.begin();
 		}
 		else if (ad_end == ad_it || (ob_end != ob_it && (*ad_it).t>(*ob_it)))//need to create a new event for observations
 		{
@@ -450,7 +453,10 @@ void create_event_queue(std::vector<event_occurence> &ad, std::vector<double>& o
 
 			o_index++;
 			event_queue.push_back(eo);
-			++ob_it;
+			//++ob_it;
+			observations.erase(observations.begin());
+			observations.shrink_to_fit();
+			ob_it = observations.begin();
 		}
 	}
 
@@ -528,15 +534,16 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 	
 
 	//declare queues
-	std::vector<event_occurence> event_queue;
-	std::vector<event_occurence>ad;
-	std::vector<double> arrivals;
+
+	std::vector<double> arrivals(10000,0);
 
 	//generate events
 	int num_arrivals = arrival_dist(T, arrivals, lambda);
-	std::vector<double> departures;
+	std::vector<double> departures(10000,0);
 	departure_dist(num_arrivals, departures,C, p, L1, L2);
 
+
+	std::vector<event_occurence>ad(20000);
 	//create queues
 	if (num_servers == 1) {
 		Ploss = arrival_departures_1_server(arrivals, departures, C, K, ad);
@@ -549,15 +556,20 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 
 	 
 	arrivals.clear();
+	arrivals.shrink_to_fit();
 	departures.clear();
+	departures.shrink_to_fit();
 
-	std::vector<double> observations;
+	std::vector<double> observations(10000,0);
 	generate_poisson(T, observations, alpha);
 
 
+	std::vector<event_occurence> event_queue(10000);
 	create_event_queue(ad, observations, event_queue);
 	ad.clear();
+	ad.shrink_to_fit();
 	observations.clear();
+	observations.shrink_to_fit();
 	//we are now set up to dequeu the events and calculate the desired parameters
 	unsigned long long int num_arrivals1 = 0;
 	unsigned long long int num_arrival_events = 0;
@@ -610,7 +622,7 @@ double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, i
 	double N_o_prev = 0;
 	double Ploss_prev = 0;
 	double PIdle_prev = 0;
-	double T = 1000;
+	double T = 10000;
 	double nT = T + T;
 
 	simulate_queue(T, lambda, L1, L2, alpha, C, K, p, num_servers, PIdle_prev, Ploss_prev,
@@ -623,7 +635,7 @@ double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, i
 	double PIdle_diff = std::abs((PIdle - PIdle_prev) / PIdle);
 	double Ploss_diff = std::abs((Ploss - Ploss_prev) / Ploss);
 
-	while (!((N_a_diff <= 0.05 || isnan(N_a_diff)) && (N_o_diff <= 0.05 || isnan(N_o_diff)) && (PIdle_diff <= 0.05 || isnan(PIdle_diff)) && (Ploss_diff <= 0.05 || isnan(Ploss_diff)))) {
+	while (!((N_a_diff <= 0.05 || std::isnan(N_a_diff)) && (N_o_diff <= 0.05 || std::isnan(N_o_diff)) && (PIdle_diff <= 0.05 || std::isnan(PIdle_diff)) && (Ploss_diff <= 0.05 || std::isnan(Ploss_diff)))) {
 		N_a_prev = N_a;
 		N_o_prev = N_o;
 		Ploss_prev = Ploss;
@@ -679,12 +691,12 @@ int main()
 
 
 	std::string fname;
-	double start = 0.5; double end = 0.95; double step = 0.05;
+	double start = 0.35; double end = 0.95; double step = 0.05;
 
 	//q3
 	fname = "M_M_1_inf.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_poisson, &generate_exponential);
-	start = 0.35
+	/*start = 0.35;
 	fname = "D_M_1_inf.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_deterministic_arrival, &generate_exponential);
 	L2 = 21000;
@@ -733,7 +745,5 @@ int main()
 	step = 0.05;
 	fname = "M_D_2_inf.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 2, &generate_poisson, &generate_deterministic_service);
-	C = 2 * C;
-	fname = "M_D_1_2C_inf.csv";
-	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_poisson, &generate_deterministic_service);
+*/
 }
