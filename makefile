@@ -9,10 +9,15 @@ CXXFLAGS = -std=c++11
 # ****************************************************
 # Targets needed to bring the executable up to date
 
+all: run
 main: main.o
 	$(CXX) $(CXXFLAGS) -o main main.o
 
-# The main.o target can be written more simply
+
 
 main.o: main.cpp
 	$(CXX) $(CXXFLAGS) -c main.cpp
+
+run: main
+	./main
+.PHONY: all run
