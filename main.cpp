@@ -120,7 +120,7 @@ int generate_deterministic_arrival(double & T, std::queue<double> &times, double
 	return counter;
 }
 
-void generate_exponential(int num, std::queue<double> &lengths, double &C, double& L, double &unused, double &unused2) {
+void generate_exponential(int num, std::queue<double> &lengths, double &C, double& p, double &mu, double &unused, double &unused2) {
 	/*
 	generates num values according to an exponential distribution with parameter mu
 	stores these values in lengths.
@@ -131,11 +131,11 @@ void generate_exponential(int num, std::queue<double> &lengths, double &C, doubl
 	std::mt19937 gen(seed);
 	std::uniform_real_distribution<>dis(0, 1.0);
 	for (int counter = 0; counter<num; counter++) {
-		lengths.push(log(1 - dis(gen))*-1 * C / (L));
+		lengths.push(log(1 - dis(gen))*-1/mu);
 	}
 }
 
-void generate_bipolar(int num, std::queue<double> &lengths, double &C, double &p, double& L1, double &L2) {
+void generate_bipolar(int num, std::queue<double> &lengths, double &C, double &p, double unused, double& L1, double &L2) {
 	/*
 	generates num values according to a bipolar distribution with parameter p
 	and lengths L1 and L2. Stores these values in lengths.
@@ -154,7 +154,7 @@ void generate_bipolar(int num, std::queue<double> &lengths, double &C, double &p
 	}
 }
 
-void generate_deterministic_service(int num, std::queue<double> &lengths, double &C, double &L, double &unused, double &unused2) {
+void generate_deterministic_service(int num, std::queue<double> &lengths, double &C, double &unuses, double &mu, double &unused, double &unused2) {
 	/*
 	generates num values according to a deterministic distribution with parameter mu
 	stores these values in lengths.
@@ -162,7 +162,7 @@ void generate_deterministic_service(int num, std::queue<double> &lengths, double
 	*/
 
 	for (int counter = 0; counter<num; counter++) {
-		lengths.push(C / L);
+		lengths.push(mu);
 	}
 }
 
@@ -524,9 +524,9 @@ void observe(unsigned long long int num_arrivals, unsigned long long int num_dep
 //simulation
 
 void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &alpha, double &C, int K,
-	double &p, int num_servers, double &PIdle, double &Ploss, double &N_a, double &N_o,
+	double &mu, double &p, int num_servers, double &PIdle, double &Ploss, double &N_a, double &N_o,
 	int(*arrival_dist)(double &, std::queue<double> &, double &),
-	void(*departure_dist)(int, std::queue<double>&, double &, double &, double &, double &)) {
+	void(*departure_dist)(int, std::queue<double>&, double &, double &, double &, double &, double &)) {
 	/*
 	runs the desired simulation based on the input functions and parameters
 	*/
@@ -539,7 +539,7 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 	//generate events
 	int num_arrivals = arrival_dist(T, arrivals, lambda);
 	std::queue<double> departures;
-	departure_dist(num_arrivals, departures, C, p, L1, L2);
+	departure_dist(num_arrivals, departures, C, p, mu, L1, L2);
 	std::queue<double> observations;
 	generate_poisson(T, observations, alpha);
 
@@ -587,10 +587,10 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 	N_o = (long double)num_buffer_per_observation / (long double)num_observations;
 }
 
-double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, int K,
+double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, int K, double &mu,
 	double &p, int num_servers, double &PIdle, double &Ploss, double &N_a, double &N_o,
 	int(*arrival_dist)(double &, std::queue<double> &, double &),
-	void(*departure_dist)(int, std::queue<double> &, double &, double&, double &, double &)) {
+	void(*departure_dist)(int, std::queue<double> &, double &, double &, double&, double &, double &)) {
 	/*
 	Finds the value of T for which we are in steady state. also gets the results of simulation
 	*/
@@ -601,9 +601,9 @@ double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, i
 	double T = 10000;
 	double nT = T + T;
 
-	simulate_queue(T, lambda, L1, L2, alpha, C, K, p, num_servers, PIdle_prev, Ploss_prev,
+	simulate_queue(T, lambda, L1, L2, alpha, C, K, mu,  p, num_servers, PIdle_prev, Ploss_prev,
 		N_a_prev, N_o_prev, arrival_dist, departure_dist);
-	simulate_queue(nT, lambda, L1, L2, alpha, C, K, p, num_servers, PIdle, Ploss,
+	simulate_queue(nT, lambda, L1, L2, alpha, C, K, mu, p, num_servers, PIdle, Ploss,
 		N_a, N_o, arrival_dist, departure_dist);
 
 	double N_a_diff = std::abs((N_a - N_a_prev) / N_a);
@@ -618,7 +618,7 @@ double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, i
 		PIdle_prev = PIdle;
 
 		nT += nT;
-		simulate_queue(nT, lambda, L1, L2, alpha, C, K, p, num_servers, PIdle, Ploss,
+		simulate_queue(nT, lambda, L1, L2, alpha, C, K, mu, p, num_servers, PIdle, Ploss,
 			N_a, N_o, arrival_dist, departure_dist);
 		N_a_diff = std::abs((N_a - N_a_prev) / N_a);
 		N_o_diff = std::abs((N_o - N_o_prev) / N_o);
@@ -631,7 +631,7 @@ double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, i
 
 void sim_multi_param(std::string & fname, double & start, double &end, double &step, double &L1, double &L2, double &C, int K,
 	double &p, int num_servers, int(*arrival_dist)(double &, std::queue<double> &, double &),
-	void(*departure_dist)(int, std::queue<double> &, double &, double&, double &, double &)) {
+	void(*departure_dist)(int, std::queue<double> &, double &,double &, double&, double &, double &)) {
 	/*
 	iterates rho between start and end with a step size of step and simmulates the specified queue.
 	stores the results in an input csv file.
@@ -642,10 +642,11 @@ void sim_multi_param(std::string & fname, double & start, double &end, double &s
 	results << " according to the observer process,PIdle,PLoss" << std::endl;
 	results.close();
 	for (double rho = start; rho <= end; rho += step) {
-		double lambda = rho*C / (p*L1 + (1 - p)*L2);
+		double lambda = num_servers*rho*C / (p*L1 + (1 - p)*L2);
+		double mu = lambda / (rho*num_servers);
 		double alpha = lambda *0.9;
 		double PIdle, Ploss, N_a, N_o;
-		double T = get_T(lambda, L1, L2, alpha, C, K, p, num_servers,
+		double T = get_T(lambda, L1, L2, alpha, C, K, mu, p, num_servers,
 			PIdle, Ploss, N_a, N_o, arrival_dist, departure_dist);
 		results.open(fname, std::ios_base::app);
 		results << rho << "," << T << "," << lambda << "," << alpha << "," << C << "," << K << "," << p << ",";
@@ -671,12 +672,12 @@ int main()
 	double start = 0.35; double end = 0.95; double step = 0.05;
 
 	//q3
-	fname = "M_M_1_inf.csv";
+	/*fname = "M_M_1_inf.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_poisson, &generate_exponential);
-	/*start = 0.35;
+	*/start = 0.35;
 	fname = "D_M_1_inf_rho_small.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_deterministic_arrival, &generate_exponential);
-	L2 = 21000;
+	/*L2 = 21000;
 	p = 0.2;
 	fname = "M_G_1_inf.csv";
 	sim_multi_param(fname, start, end, step, L1, L2, C, K, p, 1, &generate_poisson, &generate_bipolar);
