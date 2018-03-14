@@ -80,13 +80,13 @@ event_occurence create_event(event_type et, int o, int skip, double &t) {
 
 //create distributions
 
-int generate_poisson(double & T, std::queue<double> &times, double &mu) {
+int generate_poisson(double & T, std::queue<double> &times, double &mu, unsigned seed) {
 	/*
 	generate a poisson distribution with parameter mu. generates values until
 	the event time is greater than T and stores the values in times.
 	used for arrival = M and observations
 	*/
-	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	
 	double start = 0;
 	int counter = 0;
 	
@@ -102,7 +102,7 @@ int generate_poisson(double & T, std::queue<double> &times, double &mu) {
 	return counter;
 }
 
-int generate_deterministic_arrival(double & T, std::queue<double> &times, double &mu) {
+int generate_deterministic_arrival(double & T, std::queue<double> &times, double &mu, unsigned seed) {
 	/*
 	generate a deterministic distribution with parameter mu. generates values until
 	the event time is greater than T and stores the values in times.
@@ -120,14 +120,14 @@ int generate_deterministic_arrival(double & T, std::queue<double> &times, double
 	return counter;
 }
 
-void generate_exponential(int num, std::queue<double> &lengths, double &C, double& p, double &mu, double &unused, double &unused2) {
+void generate_exponential(int num, std::queue<double> &lengths, double &C, double& p, double &mu, double &unused, double &unused2, unsigned seed) {
 	/*
 	generates num values according to an exponential distribution with parameter mu
 	stores these values in lengths.
 	To be used for exponential service time
 	*/
 	
-	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	
 	std::mt19937 gen(seed);
 	std::uniform_real_distribution<>dis(0, 1.0);
 	for (int counter = 0; counter<num; counter++) {
@@ -135,13 +135,13 @@ void generate_exponential(int num, std::queue<double> &lengths, double &C, doubl
 	}
 }
 
-void generate_bipolar(int num, std::queue<double> &lengths, double &C, double &p, double unused, double& L1, double &L2) {
+void generate_bipolar(int num, std::queue<double> &lengths, double &C, double &p, double unused, double& L1, double &L2, unsigned seed) {
 	/*
 	generates num values according to a bipolar distribution with parameter p
 	and lengths L1 and L2. Stores these values in lengths.
 	To be used for G service
 	*/
-	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	
 	std::mt19937 gen(seed);
 	std::uniform_real_distribution<>dis(0, 1.0);
 	for (int counter = 0; counter<num; counter++) {
@@ -154,7 +154,7 @@ void generate_bipolar(int num, std::queue<double> &lengths, double &C, double &p
 	}
 }
 
-void generate_deterministic_service(int num, std::queue<double> &lengths, double &C, double &unuses, double &mu, double &unused, double &unused2) {
+void generate_deterministic_service(int num, std::queue<double> &lengths, double &C, double &unuses, double &mu, double &unused, double &unused2, unsigned seed) {
 	/*
 	generates num values according to a deterministic distribution with parameter mu
 	stores these values in lengths.
@@ -525,8 +525,9 @@ void observe(unsigned long long int num_arrivals, unsigned long long int num_dep
 
 void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &alpha, double &C, int K,
 	double &mu, double &p, int num_servers, double &PIdle, double &Ploss, double &N_a, double &N_o,
-	int(*arrival_dist)(double &, std::queue<double> &, double &),
-	void(*departure_dist)(int, std::queue<double>&, double &, double &, double &, double &, double &)) {
+	int(*arrival_dist)(double &, std::queue<double> &, double &, unsigned),
+	void(*departure_dist)(int, std::queue<double>&, double &, double &, double &, double &, double &, unsigned), 
+	unsigned service_seed, unsigned arrival_seed, unsigned obs_seed) {
 	/*
 	runs the desired simulation based on the input functions and parameters
 	*/
@@ -537,11 +538,11 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 	std::queue<double> arrivals;
 
 	//generate events
-	int num_arrivals = arrival_dist(T, arrivals, lambda);
+	int num_arrivals = arrival_dist(T, arrivals, lambda, arrival_seed);
 	std::queue<double> departures;
-	departure_dist(num_arrivals, departures, C, p, mu, L1, L2);
+	departure_dist(num_arrivals, departures, C, p, mu, L1, L2, service_seed);
 	std::queue<double> observations;
-	generate_poisson(T, observations, alpha);
+	generate_poisson(T, observations, alpha, obs_seed);
 
 	std::queue<event_occurence>event_queue;
 	//create queues
@@ -589,22 +590,26 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 
 double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, int K, double &mu,
 	double &p, int num_servers, double &PIdle, double &Ploss, double &N_a, double &N_o,
-	int(*arrival_dist)(double &, std::queue<double> &, double &),
-	void(*departure_dist)(int, std::queue<double> &, double &, double &, double&, double &, double &)) {
+	int(*arrival_dist)(double &, std::queue<double> &, double &, unsigned),
+	void(*departure_dist)(int, std::queue<double> &, double &, double &, double&, double &, double &, unsigned)) {
 	/*
 	Finds the value of T for which we are in steady state. also gets the results of simulation
 	*/
+	unsigned service_seed = std::chrono::system_clock::now().time_since_epoch().count();
 	double N_a_prev = 0;
 	double N_o_prev = 0;
 	double Ploss_prev = 0;
 	double PIdle_prev = 0;
 	double T = 10000;
 	double nT = T + T;
+	unsigned arrival_seed = std::chrono::system_clock::now().time_since_epoch().count()+20;
+	unsigned obs_seed = std::chrono::system_clock::now().time_since_epoch().count() + 30;
+
 
 	simulate_queue(T, lambda, L1, L2, alpha, C, K, mu,  p, num_servers, PIdle_prev, Ploss_prev,
-		N_a_prev, N_o_prev, arrival_dist, departure_dist);
+		N_a_prev, N_o_prev, arrival_dist, departure_dist, service_seed, arrival_seed, obs_seed);
 	simulate_queue(nT, lambda, L1, L2, alpha, C, K, mu, p, num_servers, PIdle, Ploss,
-		N_a, N_o, arrival_dist, departure_dist);
+		N_a, N_o, arrival_dist, departure_dist, service_seed, arrival_seed, obs_seed);
 
 	double N_a_diff = std::abs((N_a - N_a_prev) / N_a);
 	double N_o_diff = std::abs((N_o - N_o_prev) / N_o);
@@ -619,7 +624,7 @@ double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, i
 
 		nT += nT;
 		simulate_queue(nT, lambda, L1, L2, alpha, C, K, mu, p, num_servers, PIdle, Ploss,
-			N_a, N_o, arrival_dist, departure_dist);
+			N_a, N_o, arrival_dist, departure_dist, service_seed, arrival_seed, obs_seed);
 		N_a_diff = std::abs((N_a - N_a_prev) / N_a);
 		N_o_diff = std::abs((N_o - N_o_prev) / N_o);
 		PIdle_diff = std::abs((PIdle - PIdle_prev) / PIdle);
@@ -630,8 +635,8 @@ double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, i
 }
 
 void sim_multi_param(std::string & fname, double & start, double &end, double &step, double &L1, double &L2, double &C, int K,
-	double &p, int num_servers, int(*arrival_dist)(double &, std::queue<double> &, double &),
-	void(*departure_dist)(int, std::queue<double> &, double &,double &, double&, double &, double &)) {
+	double &p, int num_servers, int(*arrival_dist)(double &, std::queue<double> &, double &, unsigned),
+	void(*departure_dist)(int, std::queue<double> &, double &,double &, double&, double &, double &, unsigned)) {
 	/*
 	iterates rho between start and end with a step size of step and simmulates the specified queue.
 	stores the results in an input csv file.
