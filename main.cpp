@@ -622,13 +622,14 @@ double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, i
 		Ploss_prev = Ploss;
 		PIdle_prev = PIdle;
 
-		nT += nT;
+		nT += T;
 		simulate_queue(nT, lambda, L1, L2, alpha, C, K, mu, p, num_servers, PIdle, Ploss,
 			N_a, N_o, arrival_dist, departure_dist, service_seed, arrival_seed, obs_seed);
 		N_a_diff = std::abs((N_a - N_a_prev) / N_a);
 		N_o_diff = std::abs((N_o - N_o_prev) / N_o);
 		PIdle_diff = std::abs((PIdle - PIdle_prev) / PIdle);
 		Ploss_diff = std::abs((Ploss - Ploss_prev) / Ploss);
+		std::cout<<N_a<<","<<N_o<<","<<PIdle<<","<<Ploss<<std::endl;
 		std::cout <<nT<<","<< N_a_diff << "," << N_o_diff << "," << PIdle_diff << "," << Ploss_diff << std::endl;
 	}
 	return nT;
