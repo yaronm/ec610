@@ -135,7 +135,7 @@ void generate_exponential(int num, std::queue<double> &lengths, double &C, doubl
 	}
 }
 
-void generate_bipolar(int num, std::queue<double> &lengths, double &C, double &p, double unused, double& L1, double &L2, unsigned seed) {
+void generate_bipolar(int num, std::queue<double> &lengths, double &C, double &p, double& unused, double& L1, double &L2, unsigned seed) {
 	/*
 	generates num values according to a bipolar distribution with parameter p
 	and lengths L1 and L2. Stores these values in lengths.
@@ -675,25 +675,25 @@ int main()
 
 
 	std::string fname;
-	double start = 0.35; double end = 0.95; double step = 0.05;
+	double start = 0.95; double end = 0.96; double step = 0.05;
 
 	//q3
-	/*fname = "M_M_1_inf.csv";
+	fname = "M_M_1_inf_0.95.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_poisson, &generate_exponential);
-	*/start = 0.35;
-	fname = "D_M_1_inf_rho_small.csv";
+	start = 0.95;
+	/*fname = "D_M_1_inf_rho_0.95.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_deterministic_arrival, &generate_exponential);
-	/*L2 = 21000;
+	L2 = 21000;
 	p = 0.2;
 	fname = "M_G_1_inf.csv";
 	sim_multi_param(fname, start, end, step, L1, L2, C, K, p, 1, &generate_poisson, &generate_bipolar);
 	//q4
-	*start = 1.5;
+	/*start = 1.5;
 	end = 1.6;
 	step = 1;
 	fname = "D_M_1_inf_rho_big.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_deterministic_arrival, &generate_exponential);
-	p = 1;/*
+	p = 1;
 		  //q8
 		  L2 = 0;
 		  start = 0.4;
@@ -723,11 +723,12 @@ int main()
 		  sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_poisson, &generate_deterministic_service);
 
 		  //q9
+		  C= 1000000;
 		  K = -1;
 		  start = 0.35;
 		  end = 0.95;
 		  step = 0.05;
 		  fname = "M_D_2_inf.csv";
 		  sim_multi_param(fname, start, end, step, L, unused, C, K, p, 2, &generate_poisson, &generate_deterministic_service);
-		  */
+	*/	  
 }
