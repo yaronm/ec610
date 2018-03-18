@@ -110,7 +110,7 @@ int generate_deterministic_arrival(double & T, std::queue<double> &times, double
 	double start = 0;
 	int counter = 0;
 	while (start <= T) {
-		start += mu; //interarrival time is deterministically distributed
+		start += 1/mu; //interarrival time is deterministically distributed
 		if (start <= T) {
 			times.push(start);
 			counter++;
@@ -614,23 +614,24 @@ int main()
 	double start = 0.35; double end = 0.96; double step = 0.05;
 	
 	//q3
-	fname = "M_M_1_inf.csv";
+	/*fname = "M_M_1_inf.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_poisson, &generate_exponential);
-	start = 0.35;
+	start = 0.35;*/
 	fname = "D_M_1_inf_rho.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_deterministic_arrival, &generate_exponential);
-	L2 = 21000;
+	/*L2 = 21000;
 	p = 0.2;
 	fname = "M_G_1_inf.csv";
-	sim_multi_param(fname, start, end, step, L1, L2, C, K, p, 1, &generate_poisson, &generate_bipolar);
+	sim_multi_param(fname, start, end, step, L1, L2, C, K, p, 1, &generate_poisson, &generate_bipolar);*/
 	//q4
     std::cout<<"q4"<<std::endl;
-	start = 1.5;
+	p = 1;
+    start = 1.5;
 	end = 1.6;
 	step = 1;
 	fname = "D_M_1_inf_rho_big.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_deterministic_arrival, &generate_exponential);
-	p = 1;
+	/*
 	//q8
     std::cout<<"q8"<<std::endl;
 	L2 = 0;
@@ -659,7 +660,7 @@ int main()
 	K = 100;
 	fname = "M_D_1_K100_rho_big.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_poisson, &generate_deterministic_service);
-	
+	*/
 	//q9
     std::cout<<"q9"<<std::endl;
 	C = 1000000;
@@ -668,6 +669,10 @@ int main()
 	end = 0.96;
 	step = 0.05;
 	fname = "M_D_2_inf.csv";
-	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 2, &generate_poisson, &generate_deterministic_service);
+	//sim_multi_param(fname, start, end, step, L, unused, C, K, p, 2, &generate_poisson, &generate_deterministic_service);
+    std::cout<<"q9"<<std::endl;
+	C = 2000000;
+	fname = "M_D_1_inf.csv";
+	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_poisson, &generate_deterministic_service);
 
 }
