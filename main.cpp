@@ -86,7 +86,6 @@ int generate_poisson(double & T, std::queue<double> &times, double &mu, unsigned
 	the event time is greater than T and stores the values in times.
 	used for arrival = M and observations
 	*/
-
 	double start = 0;
 	int counter = 0;
 
@@ -120,14 +119,12 @@ int generate_deterministic_arrival(double & T, std::queue<double> &times, double
 	return counter;
 }
 
-void generate_exponential(int num, std::queue<double> &lengths, double &C, double& p, double &mu, double &unused, double &unused2, unsigned seed) {
+void generate_exponential(int num, std::queue<double> &lengths, double &C, double& unuses, double &mu, double &unused, double &unused2, unsigned seed) {
 	/*
 	generates num values according to an exponential distribution with parameter mu
 	stores these values in lengths.
 	To be used for exponential service time
 	*/
-
-
 	std::mt19937 gen(seed);
 	std::uniform_real_distribution<>dis(0, 1.0);
 	for (int counter = 0; counter<num; counter++) {
@@ -219,8 +216,7 @@ double arrival_departures_1_server_infinite_queue(std::queue<double> &arrivals, 
 			eo = create_event(a, a_index, 0, next_arrival);
 			if (next_departure == 0) {//if the system was empty before this arrival, this is the next
 									  //parcket to be serviced
-				next_departure = next_arrival + (1 / departures.front());//d_index is a_index-1, but a_index is 
-																		 //1_indexed while vectors are 0_indexed
+				next_departure = next_arrival + (1 / departures.front());
 				departures.pop();
 			}
 			next_arrival = 0;
@@ -231,7 +227,6 @@ double arrival_departures_1_server_infinite_queue(std::queue<double> &arrivals, 
 			next_observation = 0;
 		}
 		ad.push(eo);
-
 	}
 	return 0;
 }
@@ -363,7 +358,6 @@ double arrival_departures_2_server_infinite_buffer(std::queue<double>& arrivals,
 
 	double * next_departure = &next_departure1;
 	double *last_departure = &last_departure1;
-	std::cout << "making event queue" << std::endl;
 	while (!arrivals.empty() || !observations.empty() || next_arrival != 0 || next_observation != 0 || d_index < a_index) {
 		if (next_arrival == 0 && !arrivals.empty()) {
 			next_arrival = arrivals.front();
@@ -427,46 +421,10 @@ double arrival_departures_2_server_infinite_buffer(std::queue<double>& arrivals,
 			next_observation = 0;
 		}
 		ad.push(eo);
-		std::cout << observations.size() << "," << arrivals.size() << "," << departures.size() << "," << ad.size() << std::endl;
 	}
-	std::cout << "leaving make queu" << std::endl;
 	return 0;
 }
 
-/*void create_event_queue(std::vector<event_occurence> &ad, std::vector<double>& observations,
-std::vector<event_occurence> &event_queue) {
-/*
-*creates a  new event queue in event_queue. Contains the arrivals, departures and observations in order
-
-*****************UNUSED****************
-*//*
-auto ad_it = ad.begin();
-auto ob_it = observations.begin();
-auto ad_end = ad.end();
-auto ob_end = observations.end();
-int o_index = 1;
-while (ad_it != ad_end || ob_it != ob_end) {
-if (ob_end == ob_it || (ad_it != ad_end && (*ad_it).t <= (*ob_it))) {//determine which event is first
-event_queue.push_back(*ad_it);
-ad_it = ad.erase(ad_it);
-ad.shrink_to_fit();
-ad_it = ad.begin();
-ad_end = ad.end();
-}
-else if (ad_end == ad_it || (ob_end != ob_it && (*ad_it).t>(*ob_it)))//need to create a new event for observations
-{
-event_occurence eo = create_event(o, o_index, 0, *ob_it);
-
-o_index++;
-event_queue.push_back(eo);
-ob_it = observations.erase(ob_it);
-observations.shrink_to_fit();
-ob_it = observations.begin();
-ob_end = observations.end();
-}
-}
-
-}*/
 //end of creating queues
 
 //actions for event processing
@@ -478,22 +436,13 @@ void arrive(unsigned long long int & num_arrivals, event_occurence &curr_arr, un
 	*/
 	num_arrival_events++;
 	unsigned long long int curr_in_queue;
-
 	if (curr_arr.e.skip == 0) {
 		num_arrivals++;
 	}
-
 	curr_in_queue = num_arrivals - num_departures;
-
-
-	if (curr_in_queue == (unsigned int)num_servers)
-		curr_in_queue = 0;
-	else
-		num_in_queue += curr_in_queue - num_servers;
-
+    //per TA's announcement N_A and N_O are the number of packets in the system not queue
+	num_in_queue += curr_in_queue - num_servers;
 	assert(num_in_queue <= ULLONG_MAX);
-
-
 }
 
 void depart(unsigned long long int &num_departures, event_occurence &curr) {
@@ -513,11 +462,7 @@ void observe(unsigned long long int num_arrivals, unsigned long long int num_dep
 	if (curr_buffer == 0) {
 		num_empty++;
 	}
-	else if (curr_buffer == (unsigned int)num_servers) {
-		curr_buffer = 0;
-	}
-	else
-		curr_buffer -= 2;
+	
 	num_buffer += curr_buffer;
 	assert(num_buffer <= ULLONG_MAX);
 }
@@ -534,13 +479,8 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 	/*
 	runs the desired simulation based on the input functions and parameters
 	*/
-
-
-	//declare queues
-
+	//declare queues and generate events
 	std::queue<double> arrivals;
-
-	//generate events
 	int num_arrivals = arrival_dist(T, arrivals, lambda, arrival_seed);
 	std::queue<double> departures;
 	departure_dist(num_arrivals, departures, C, p, mu, L1, L2, service_seed);
@@ -548,6 +488,7 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 	generate_poisson(T, observations, alpha, obs_seed);
 
 	std::queue<event_occurence>event_queue;
+	
 	//create queues
 	if (num_servers == 1) {
 		Ploss = arrival_departures_1_server(arrivals, departures, C, K, event_queue, observations);
@@ -559,7 +500,6 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 	//we are now set up to dequeu the events and calculate the desired parameters
 	unsigned long long int num_arrivals1 = 0;
 	unsigned long long int num_arrival_events = 0;
-
 	unsigned long long int num_departures = 0;
 	unsigned long long int num_empty = 0;
 	unsigned long long int num_observations = 0;
@@ -585,8 +525,7 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 			break;
 		}
 	}
-	std::cout << "ending simulation" << std::endl;
-
+	
 	PIdle = (long double)num_empty / (long double)num_observations;
 	N_a = (long double)num_in_queue_per_arrival / (long double)num_arrival_events;
 	N_o = (long double)num_buffer_per_observation / (long double)num_observations;
@@ -609,7 +548,6 @@ double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, i
 	unsigned arrival_seed = std::chrono::system_clock::now().time_since_epoch().count() + 20;
 	unsigned obs_seed = std::chrono::system_clock::now().time_since_epoch().count() + 30;
 
-
 	simulate_queue(T, lambda, L1, L2, alpha, C, K, mu, p, num_servers, PIdle_prev, Ploss_prev,
 		N_a_prev, N_o_prev, arrival_dist, departure_dist, service_seed, arrival_seed, obs_seed);
 	simulate_queue(nT, lambda, L1, L2, alpha, C, K, mu, p, num_servers, PIdle, Ploss,
@@ -625,7 +563,6 @@ double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, i
 		N_o_prev = N_o;
 		Ploss_prev = Ploss;
 		PIdle_prev = PIdle;
-
 		nT += T;
 		simulate_queue(nT, lambda, L1, L2, alpha, C, K, mu, p, num_servers, PIdle, Ploss,
 			N_a, N_o, arrival_dist, departure_dist, service_seed, arrival_seed, obs_seed);
@@ -633,8 +570,6 @@ double get_T(double &lambda, double &L1, double &L2, double &alpha, double &C, i
 		N_o_diff = std::abs((N_o - N_o_prev) / N_o);
 		PIdle_diff = std::abs((PIdle - PIdle_prev) / PIdle);
 		Ploss_diff = std::abs((Ploss - Ploss_prev) / Ploss);
-		std::cout << N_a << "," << N_o << "," << PIdle << "," << Ploss << std::endl;
-		std::cout << nT << "," << N_a_diff << "," << N_o_diff << "," << PIdle_diff << "," << Ploss_diff << std::endl;
 	}
 	return nT;
 }
@@ -662,14 +597,11 @@ void sim_multi_param(std::string & fname, double & start, double &end, double &s
 		results << rho << "," << T << "," << lambda << "," << alpha << "," << C << "," << K << "," << p << ",";
 		results << num_servers << "," << N_a << "," << N_o << "," << PIdle << "," << Ploss << std::endl;
 		results.close();
-
-
 	}
 }
 
 int main()
 {
-	//continue testing from simulate_queue,arrive, observe, depart
 	double T; double lambda; double L = 20000; double L1 = 16000; double L2 = 0; double alpha = 0.0315; int K = -1; double p = 1;
 	T = 10000;
 	lambda = 0.035;
@@ -679,19 +611,20 @@ int main()
 
 
 	std::string fname;
-	double start = 0.95; double end = 0.96; double step = 0.05;
-	/*
+	double start = 0.35; double end = 0.96; double step = 0.05;
+	
 	//q3
-	fname = "M_M_1_inf_0.95.csv";
+	fname = "M_M_1_inf.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_poisson, &generate_exponential);
-	start = 0.95;
-	fname = "D_M_1_inf_rho_0.95.csv";
+	start = 0.35;
+	fname = "D_M_1_inf_rho.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_deterministic_arrival, &generate_exponential);
 	L2 = 21000;
 	p = 0.2;
 	fname = "M_G_1_inf.csv";
 	sim_multi_param(fname, start, end, step, L1, L2, C, K, p, 1, &generate_poisson, &generate_bipolar);
 	//q4
+    std::cout<<"q4"<<std::endl;
 	start = 1.5;
 	end = 1.6;
 	step = 1;
@@ -699,9 +632,10 @@ int main()
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_deterministic_arrival, &generate_exponential);
 	p = 1;
 	//q8
+    std::cout<<"q8"<<std::endl;
 	L2 = 0;
 	start = 0.4;
-	end = 2;
+	end = 2.01;
 	step = 0.1;
 	K = 10;
 	fname = "M_D_1_K10_rho_small.csv";
@@ -714,7 +648,7 @@ int main()
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_poisson, &generate_deterministic_service);
 
 	start = 2;
-	end = 3;
+	end = 3.1;
 	step = 0.2;
 	K = 10;
 	fname = "M_D_1_K10_rho_big.csv";
@@ -725,8 +659,9 @@ int main()
 	K = 100;
 	fname = "M_D_1_K100_rho_big.csv";
 	sim_multi_param(fname, start, end, step, L, unused, C, K, p, 1, &generate_poisson, &generate_deterministic_service);
-	*/
+	
 	//q9
+    std::cout<<"q9"<<std::endl;
 	C = 1000000;
 	K = -1;
 	start = 0.35;
