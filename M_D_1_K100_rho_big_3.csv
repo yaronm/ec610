@@ -1,3 +1,0 @@
-rho,T,lambda,alpha,C,K,p,num_servers,E[N] according to the arrival process,E[N] according to the observer process,PIdle,PLoss
-3,220000,300,270,2e+06,100,1,1,101.979,100.645,1.68367e-08,0.666749
-3.2,20000,320,288,2e+06,100,1,1,101.983,100.671,0,0.687358
