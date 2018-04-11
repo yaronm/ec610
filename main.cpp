@@ -134,7 +134,7 @@ void generate_exponential(int num, std::queue<double> &lengths, double &C, doubl
 		val1 = log(1 - val1);
 		val1 = val1 / mu;
 		val1 = -1 * val1;
-		lengths.push(1/val1);
+		lengths.push(val1);
 	}
 }
 
@@ -213,7 +213,7 @@ double arrival_departures_1_server_infinite_queue(std::queue<double> &arrivals, 
 											//the next packet
 			next_departure = 0;
 			if (d_index < a_index) {//we have packets in the queue
-				next_departure = last_departure + (1 / departures.front());//get next departure time
+				next_departure = last_departure + ( departures.front());//get next departure time
 				departures.pop();
 			}
 		}
@@ -222,7 +222,7 @@ double arrival_departures_1_server_infinite_queue(std::queue<double> &arrivals, 
 			eo = create_event(a, a_index, 0, next_arrival);
 			if (next_departure == 0) {//if the system was empty before this arrival, this is the next
 									  //packet to be serviced
-				next_departure = next_arrival + (1 / departures.front());
+				next_departure = next_arrival + ( departures.front());
 				departures.pop();
 			}
 			next_arrival = 0;
@@ -446,13 +446,11 @@ void arrive(long double & num_arrivals, event_occurence &curr_arr, long double n
 	if (curr_arr.e.skip == 0) {//only count arrivals of packets that are not dropped
 		num_arrivals++;
 	}
-	//assert(num_arrivals == num_arrival_events);
-	//assert (num_departures <= num_arrivals);
+	
 	curr_in_queue = num_arrivals - num_departures;//number of packets int eh system
 												  //per TA's announcement N_A and N_O are the number of packets in the system not queue
-	//assert(curr_in_queue <= num_arrivals);
+	
 	num_in_queue += curr_in_queue - num_servers;
-	//assert(num_in_queue <= LDBL_MAX && num_in_queue>=0);//ensure no overflow
 }
 
 void depart(long double &num_departures) {
@@ -468,14 +466,11 @@ void observe(long double num_arrivals, long double num_departed, long double &nu
 	*perform actions upon observation events
 	*/
 	num_observations++;
-	//assert(num_departed <= num_arrivals);
 	long double curr_buffer = (num_arrivals - num_departed);//number of packets in the system
 	if (curr_buffer == 0) {
 		num_empty++;
 	}
-	//assert (curr_buffer <= num_arrivals);
 	num_buffer += curr_buffer;
-	//assert(num_buffer <= LDBL_MAX && num_buffer >= 0);//check for overflow
 }
 
 //end of event processing
@@ -499,8 +494,9 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 	generate_poisson(T, observations, alpha, obs_seed);
 
 	std::queue<event_occurence>event_queue;
-	Ploss = arrival_departures_1_server_infinite_queue(arrivals, departures, C, event_queue, observations);
+	
 	//create event queue
+	Ploss = arrival_departures_1_server_infinite_queue(arrivals, departures, C, event_queue, observations);//only care about M/M/1
 	/*if (num_servers == 1) {
 		Ploss = arrival_departures_1_server(arrivals, departures, C, K, event_queue, observations);
 	}
@@ -545,12 +541,7 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 				break;
 			}
 		event_queue.pop();
-		//assert((num_arrivals1 - num_arrivals1) <= 1.1 && (num_arrivals1 - num_arrivals1) >= -0.1);
-		//assert((num_departures - old_num_departures) <= 1.1 && (num_departures - old_num_departures) >= -0.1);
-		//assert((num_observations - old_num_observations) <= 1.1 && (num_observations - old_num_observations) >= -0.1);
-		//assert((num_buffer_per_observation - old_num_buffer_per_observation) <= (old_num_arrivals - old_num_departures+0.1) && (num_buffer_per_observation - old_num_buffer_per_observation) >= -0.1);
-		//assert((num_in_queue_per_arrival - old_num_in_queue_per_arrival) <= (old_num_arrivals - old_num_departures + 1.1) && (num_in_queue_per_arrival - old_num_in_queue_per_arrival) >= -0.1);
-
+		
 	}
 	std::queue<event_occurence>empty;
 	event_queue.swap(empty);
