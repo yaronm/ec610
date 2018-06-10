@@ -256,7 +256,7 @@ event_occurence add_departure_event_finite_queue(int &d_index, int &skip_next, d
 
 	if (d_index<a_index) {//we might have packets in the queue
 		if (!dropped.empty() && (d_index + 1) == next_to_skip) {//skip the next departure
-			next_departure = last_departure + (1 / departures.front());//get next departure time
+			next_departure = last_departure + (departures.front());//get next departure time
 			departures.pop();
 			skip_next = 1;
 			next_to_skip = dropped.front();
@@ -266,7 +266,7 @@ event_occurence add_departure_event_finite_queue(int &d_index, int &skip_next, d
 			}
 		}
 		else {///we have packets in the queue
-			next_departure = last_departure + (1 / departures.front());//get next departure time
+			next_departure = last_departure + (departures.front());//get next departure time
 			departures.pop();
 			skip_next = 0;
 		}
@@ -328,7 +328,7 @@ double arrival_departures_1_server(std::queue<double> &arrivals, std::queue<doub
 			else {
 				if (next_departure == 0) {//if the system was empty before this arrival, this is the next
 										  //packet to be serviced
-					next_departure = next_arrival + (1 / departures.front());
+					next_departure = next_arrival + (departures.front());
 					departures.pop();
 				}
 			}
@@ -496,13 +496,13 @@ void simulate_queue(double &T, double &lambda, double &L1, double &L2, double &a
 	std::queue<event_occurence>event_queue;
 	
 	//create event queue
-	Ploss = arrival_departures_1_server_infinite_queue(arrivals, departures, C, event_queue, observations);//only care about M/M/1
-	/*if (num_servers == 1) {
+	
+	if (num_servers == 1) {
 		Ploss = arrival_departures_1_server(arrivals, departures, C, K, event_queue, observations);
 	}
 	else {
 		Ploss = arrival_departures_2_server_infinite_buffer(arrivals, departures, C, event_queue, observations);
-	}*/
+	}
 
 	//we are now set up to dequeu the events and calculate the desired parameters
 	long double num_arrivals1 = 0;
